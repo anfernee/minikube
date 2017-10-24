@@ -38,7 +38,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-
+	"k8s.io/minikube/pkg/drivers/vmware"
 	cfg "k8s.io/minikube/pkg/minikube/config"
 	"k8s.io/minikube/pkg/minikube/constants"
 	pkgutil "k8s.io/minikube/pkg/util"
@@ -186,6 +186,18 @@ func createVirtualboxHost(config MachineConfig) drivers.Driver {
 	return d
 }
 
+func createVMwareHost(config MachineConfig) drivers.Driver {
+	d := vmware.NewDriver(cfg.GetMachineName(), constants.GetMinipath()).(*vmware.Driver)
+	d.Boot2DockerURL = config.Downloader.GetISOFileURI(config.MinikubeISO)
+	d.Memory = config.Memory
+	d.CPU = config.CPUs
+	d.DiskSize = config.DiskSize
+	d.SSHPort = 22
+	d.ISO = d.ResolveStorePath("boot2docker.iso")
+
+	return d
+}
+
 func createHost(api libmachine.API, config MachineConfig) (*host.Host, error) {
 	var driver interface{}
 
@@ -198,6 +210,8 @@ func createHost(api libmachine.API, config MachineConfig) (*host.Host, error) {
 	switch config.VMDriver {
 	case "virtualbox":
 		driver = createVirtualboxHost(config)
+	case "vmware":
+		driver = createVMwareHost(config)
 	case "vmwarefusion":
 		driver = createVMwareFusionHost(config)
 	case "kvm", "kvm2":
@@ -314,6 +328,12 @@ func GetVMHostIP(host *host.Host) (net.IP, error) {
 		return ip, nil
 	case "xhyve":
 		return net.ParseIP("192.168.64.1"), nil
+	case "vmware":
+		ip, err := host.Driver.GetIP()
+		if err != nil {
+			return []byte{}, nil
+		}
+		return net.ParseIP(ip), nil
 	default:
 		return []byte{}, errors.New("Error, attempted to get host ip address for unsupported driver")
 	}
