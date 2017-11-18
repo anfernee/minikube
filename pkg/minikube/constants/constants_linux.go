@@ -26,6 +26,7 @@ var SupportedVMDrivers = [...]string{
 	"virtualbox",
 	"kvm",
 	"kvm2",
+	"vmware",
 	"none",
 }
 
