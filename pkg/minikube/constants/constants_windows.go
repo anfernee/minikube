@@ -25,6 +25,7 @@ import (
 var SupportedVMDrivers = [...]string{
 	"virtualbox",
 	"hyperv",
+	"vmware",
 }
 
 var DefaultMountDir = homedir.HomeDir()
